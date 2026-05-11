@@ -22,14 +22,16 @@ def handle_cliente(conn, addr):
             if versao != 'HTTP/1.1':
                 print(f"Versão não suportada {versao}")
                 erro_505(conn)
+                registrar(addr[0], metodo, caminho, 505)
                 break
             if metodo != 'GET':
                 print(f"Método não suportado {metodo}")
                 erro_400(conn)
+                registrar(addr[0], metodo, caminho, 400)
                 break
             print(f"[{addr}] {metodo} {caminho} {versao}")
-            arquivos.servir_arquivo(conn, caminho)
-            registrar(addr[0], metodo, caminho, 200)
+            status = arquivos.servir_arquivo(conn, caminho)
+            registrar(addr[0], metodo, caminho, status)
 
     except ConnectionResetError:
         print(f"[!] Cliente {addr} desconectou abruptamente")

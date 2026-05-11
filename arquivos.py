@@ -90,12 +90,12 @@ def servir_arquivo(conn, caminho):
                 'Content-Type': 'text/html',
                 'Content-Length': len(conteudo)
             }, conteudo)
-            return
+            return 200
 
     # Verifica se o arquivo existe
     if not os.path.exists(caminho_arquivo):
         erro_404(conn)
-        return
+        return 404
     
     # Descobre o MIME type
     mime = get_mime_type(caminho_arquivo)
@@ -117,4 +117,5 @@ def servir_arquivo(conn, caminho):
             if not chunk:
                 break
             conn.sendall(chunk)
+    return 200
 
