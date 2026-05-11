@@ -2,6 +2,8 @@ import socket
 import threading
 import arquivos
 import http_parser
+from erros import erro_400, erro_505
+
 
 HOST = '0.0.0.0'
 PORTA = 8080
@@ -31,9 +33,11 @@ def handle_cliente (conn, addr):
                 break
             if versao != 'HTTP/1.1':
                 print(f"Versão não suportada {versao}")
+                erro_505(conn)
                 break
             if metodo != 'GET': 
                 print(f"Método não suportado {metodo}")
+                erro_400(conn)
                 break
 
             print(f"[{addr}] {metodo} {caminho} {versao}")

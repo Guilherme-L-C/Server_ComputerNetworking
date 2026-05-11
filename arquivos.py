@@ -1,5 +1,7 @@
 import os
 import respostas
+from erros import erro_404
+
 
 # Tabela de MIME types 
 MIME_TYPES = {
@@ -92,9 +94,7 @@ def servir_arquivo(conn, caminho):
 
     # Verifica se o arquivo existe
     if not os.path.exists(caminho_arquivo):
-        respostas.enviar_resposta(conn, '404 Not Found', {
-            'Content-Type': 'text/html'
-        }, b'<h1>404 - Arquivo nao encontrado</h1>')
+        erro_404(conn)
         return
     
     # Descobre o MIME type
