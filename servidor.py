@@ -3,7 +3,7 @@ import threading
 import arquivos
 import http_parser
 from erros import erro_400, erro_505
-
+from logs import registrar
 
 HOST = '0.0.0.0'
 PORTA = 8080
@@ -42,6 +42,7 @@ def handle_cliente (conn, addr):
 
             print(f"[{addr}] {metodo} {caminho} {versao}")
             arquivos.servir_arquivo(conn, caminho)
+            registrar(addr[0], metodo, caminho, 200) 
             # versao vazia por enquanto 
 
     except Exception as e: 
