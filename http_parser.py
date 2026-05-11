@@ -6,10 +6,6 @@ def parser_requisicao(dados):
         # decodifica os bytes para string: 
         texto = dados.decode('utf-8')
 
-
-
-
-
         # separa cabeçalhos do corpo (linha vazia \r\n\r\n)
         cabecalhos_raw = texto.split('\r\n\r\n')[0]
 

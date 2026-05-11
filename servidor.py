@@ -47,13 +47,6 @@ def handle_cliente (conn, addr):
         conn.close()
         print(f"[-] Conexão encerrada {addr}")
 
-
-
-
-
-
-
-
 """
 Criando o servidor: 
 """
