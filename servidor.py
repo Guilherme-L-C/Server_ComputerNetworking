@@ -3,7 +3,7 @@ import threading
 import arquivos
 import http_parser
 from erros import erro_400, erro_505
-
+from logs import registrar
 
 HOST = '0.0.0.0'
 PORTA = 8080
@@ -42,13 +42,31 @@ def handle_cliente (conn, addr):
 
             print(f"[{addr}] {metodo} {caminho} {versao}")
             arquivos.servir_arquivo(conn, caminho)
+            arquivos.servir_arquivo(conn, caminho)
+            registrar(addr[0], metodo, caminho, 200)
+            
             # versao vazia por enquanto 
 
-    except Exception as e: 
-        print(f"Erro: {e}")
-    finally: 
-        # sempre fecha a conexão 
-        conn.close()
+    except ConnectionResetError:
+        print(f"[!] Cliente {addr} desconectou abruptamente")
+
+    except TimeoutError:
+        print(f"[!] Timeout na conexão {addr}")
+
+    except PermissionError:
+        print(f"[!] Sem permissão para acessar arquivo — {addr}")
+
+    except OSError as e:
+        print(f"[!] Erro de socket {addr}: {e}")
+
+    except Exception as e:
+        print(f"[!] Erro inesperado {addr}: {e}")
+
+    finally:
+        try:
+            conn.close()
+        except OSError:
+            pass
         print(f"[-] Conexão encerrada {addr}")
 
 """
