@@ -1,5 +1,6 @@
 import socket
 import threading
+import os
 
 HOST = '0.0.0.0'
 PORTA = 8080
@@ -9,7 +10,7 @@ PORTA = 8080
 def handle_cliente (conn, addr):
     # addr -> address -> endereço que foi conectado -> uma tupla que contem (ip, porta)
     # conn -> connection -> objeto socket que é criado para gerenciar a conexão com o cliente
-
+   
 
     # função vai rodar a thread separada para cada cliente
     print(f"[+] Coneção {addr}")
@@ -35,6 +36,7 @@ def handle_cliente (conn, addr):
                 break
 
             print(f"[{addr}] {metodo} {caminho} {versao}")
+            servir_arquivo(conn, caminho)
             # versao vazia por enquanto 
 
     except Exception as e: 
@@ -43,6 +45,76 @@ def handle_cliente (conn, addr):
         # sempre fecha a conexão 
         conn.close()
         print(f"[-] Conexão encerrada {addr}")
+
+# Tabela de MIME types 
+MIME_TYPES = {
+    '.html': 'text/html',
+    '.css':  'text/css',
+    '.js':   'application/javascript',
+    '.txt':  'text/plain',
+    '.png':  'image/png',
+    '.jpg':  'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.gif':  'image/gif',
+    '.ico':  'image/x-icon',
+    '.pdf':  'application/pdf',
+}
+
+def get_mime_type(caminho):
+    # Pega a extensão do arquivo e retorna o MIME type
+    _, extensao = os.path.splitext(caminho)
+    return MIME_TYPES.get(extensao.lower(), 'application/octet-stream')
+    # application/octet-stream -> tipo genérico para arquivos desconhecidos
+    # faz o navegador baixar o arquivo
+
+def enviar_resposta(conn, status, cabecalhos, corpo=b''):
+    # Monta e envia a resposta HTTP completa
+    resposta = f"HTTP/1.1 {status}\r\n"
+    for chave, valor in cabecalhos.items():
+        resposta += f"{chave}: {valor}\r\n"
+    resposta += "\r\n"
+    # Envia os cabeçalhos
+    conn.sendall(resposta.encode('utf-8'))
+    # Envia o corpo se existir
+    if corpo:
+        conn.sendall(corpo)
+
+def servir_arquivo(conn, caminho):
+    # Remove a / do início do caminho
+    # ex: /index.html -> index.html
+    caminho_arquivo = caminho.lstrip('/')
+    
+    # Se o caminho estiver vazio, serve index.html
+    if not caminho_arquivo:
+        caminho_arquivo = 'index.html'
+    
+    # Verifica se o arquivo existe
+    if not os.path.exists(caminho_arquivo):
+        enviar_resposta(conn, '404 Not Found', {
+            'Content-Type': 'text/html'
+        }, b'<h1>404 - Arquivo nao encontrado</h1>')
+        return
+    
+    # Descobre o MIME type
+    mime = get_mime_type(caminho_arquivo)
+    
+    # Verifica se é binário ou texto
+    modo = 'rb'  # rb = read binary
+    
+    # Envia os cabeçalhos primeiro
+    tamanho = os.path.getsize(caminho_arquivo)
+    enviar_resposta(conn, '200 OK', {
+        'Content-Type': mime,
+        'Content-Length': tamanho,
+    })
+    
+    # Lazy evaluation — lê e envia em chunks de 8KB
+    with open(caminho_arquivo, modo) as arquivo:
+        while True:
+            chunk = arquivo.read(8192)
+            if not chunk:
+                break
+            conn.sendall(chunk)
 
 
 def parser_requisicao(dados):
