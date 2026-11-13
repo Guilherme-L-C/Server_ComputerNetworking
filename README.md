@@ -1,149 +1,77 @@
-# Servidor HTTP/1.1 — Redes de Computadores
+# HTTP/1.1 Server from Scratch
 
-> Projeto desenvolvido para a disciplina de Redes de Computadores (UAB00078)  
-> Bacharelado em Engenharia da Computação — UFRPE / UABJ  
-> Professor: Ygor Amaral Barbosa Leite de Sena  
-> Autor: Guilherme L. C.
+🇧🇷 [Leia em português](README.pt-BR.md)
 
----
+![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)
+![No dependencies](https://img.shields.io/badge/dependencies-none-brightgreen)
+![License: MIT](https://img.shields.io/badge/license-MIT-blue)
 
-## Sobre o Projeto
+An HTTP/1.1 web server written in pure Python on top of raw TCP sockets — no frameworks and no libraries that abstract the protocol. Built for the Computer Networks course (UAB00078) of the Computer Engineering degree at UFRPE / UABJ, taught by Prof. Ygor Amaral Barbosa Leite de Sena.
 
-Servidor HTTP/1.1 implementado do zero em Python, sem uso de frameworks ou bibliotecas que abstraiam o protocolo. A comunicação é feita diretamente via sockets TCP, seguindo a especificação do protocolo HTTP/1.1.
+## Features
 
----
+- Hand-written HTTP/1.1 request parser (method, path, version, headers)
+- Persistent connections (Keep-Alive) and one thread per client
+- Static files streamed in 8 KB chunks, so large files never load fully into memory
+- MIME type detection by extension
+- Apache-style directory listing, serving `index.html` when present
+- Status codes 200, 400, 403, 404 and 505, each with a custom error page
+- Path traversal protection: requests such as `/../../etc/passwd` get `403`
+- Access log written to `log.txt`
 
-## Funcionalidades
+## How it works
 
-- Suporte ao método GET
-- Conexões persistentes HTTP/1.1 (Keep-Alive)
-- Servir arquivos de texto e binários com lazy evaluation (chunks de 8KB)
-- Detecção automática de MIME type por extensão
-- Navegação de diretórios dinâmica (similar ao Apache)
-- Serve `index.html` automaticamente quando disponível
-- Códigos de status: 200, 400, 404, 505
-- Páginas HTML personalizadas para cada erro
-- Sistema de logs com registro em arquivo
-- Tratamento de exceções de conexão
-- Suporte a múltiplos clientes simultâneos com threading
-
----
-
-## Estrutura do Projeto
-
-```
-Server_ComputerNetworking/
-├── servidor.py      → ponto de entrada, loop principal e threading
-├── http_parser.py   → parser da requisição HTTP/1.1
-├── arquivos.py      → serving de arquivos e listagem de diretórios
-├── respostas.py     → montagem e envio de respostas HTTP
-├── erros.py         → páginas de erro personalizadas
-├── logs.py          → sistema de logs e auditoria
-└── README.md
+```mermaid
+flowchart LR
+  B["Browser"] -->|"HTTP/1.1 request"| S["servidor.py<br/>accepts the TCP connection<br/>and starts a thread"]
+  S --> P["http_parser.py<br/>method, path, version"]
+  P --> A["arquivos.py<br/>file or directory listing"]
+  A --> R["respostas.py<br/>status line, headers, body"]
+  R --> B
+  A --> L["logs.py<br/>log.txt"]
 ```
 
----
+| File | Responsibility |
+| :--- | :--- |
+| `servidor.py` | Entry point: socket, accept loop and threading |
+| `http_parser.py` | Parses the HTTP/1.1 request |
+| `arquivos.py` | Serves files and builds directory listings |
+| `respostas.py` | Builds and sends HTTP responses |
+| `erros.py` | Custom error pages |
+| `logs.py` | Access log |
+| `test_arquivos.py` | Tests (`unittest`) |
 
-## Como Executar
+## Running
 
-### Pré-requisitos
-
-Python 3.10 ou superior. Nenhuma dependência externa necessária.
-
-### Iniciar o servidor
+Requires Python 3.10+. No external dependencies.
 
 ```bash
 python servidor.py
+# Servidor HTTP rodando em: http://localhost:8080
 ```
 
-Saída esperada:
+Then open:
 
-```
-Servidor HTTP rodando em: http://localhost:8080
-```
+- <http://localhost:8080/> — serves `index.html`
+- <http://localhost:8080/pasta_teste/> — generated directory listing
+- <http://localhost:8080/missing.html> — custom 404 page
 
-### Acessar no navegador
+Log lines look like this:
 
-```
-http://localhost:8080
-```
-
----
-
-## Como Testar
-
-### Arquivo estático
-```
-http://localhost:8080/index.html
-```
-
-### Listagem de diretório
-```
-http://localhost:8080/pasta/
-```
-Se não houver `index.html` na pasta, o servidor gera uma página com a listagem dos arquivos.
-
-### Erro 404
-```
-http://localhost:8080/arquivo_que_nao_existe.html
-```
-
-### Logs
-Os logs são salvos automaticamente em `log.txt` no formato:
 ```
 [2026-05-11 14:30:22] 127.0.0.1 GET /index.html 200
-[2026-05-11 14:30:23] 127.0.0.1 GET /naoexiste.html 404
 ```
 
----
-
-## Códigos de Status Suportados
-
-| Código | Descrição | Quando ocorre |
-|---|---|---|
-| 200 | OK | Arquivo encontrado e entregue |
-| 400 | Bad Request | Método diferente de GET |
-| 404 | Not Found | Arquivo ou diretório não encontrado |
-| 505 | HTTP Version Not Supported | Versão HTTP diferente de 1.1 |
-
----
-
-## MIME Types Suportados
-
-| Extensão | MIME Type |
-|---|---|
-| .html | text/html |
-| .css | text/css |
-| .js | application/javascript |
-| .txt | text/plain |
-| .png | image/png |
-| .jpg / .jpeg | image/jpeg |
-| .gif | image/gif |
-| .ico | image/x-icon |
-| .pdf | application/pdf |
-
----
-
-## Arquitetura
-
-```
-Navegador
-    ↓ requisição HTTP/1.1
-servidor.py → aceita conexão → cria thread
-    ↓
-http_parser.py → extrai método, caminho, versão
-    ↓
-arquivos.py → localiza arquivo ou gera listagem
-    ↓
-respostas.py → monta e envia resposta HTTP
-    ↓
-logs.py → registra em log.txt
-```
-
----
-
-## Validação
+## Tests
 
 ```bash
-python -m py_compile servidor.py http_parser.py arquivos.py respostas.py erros.py logs.py
+python -m unittest -v
 ```
+
+## Development
+
+Each feature was tracked as a GitHub issue, built on its own branch and merged through a pull request ([history](https://github.com/Guilherme-L-C/Server_ComputerNetworking/pulls?q=is%3Apr)).
+
+## License
+
+[MIT](LICENSE) © Guilherme Leite Cavalcanti
