@@ -1,6 +1,6 @@
 import os
 import respostas
-from erros import erro_404
+from erros import erro_403, erro_404
 
 
 # Tabela de MIME types 
@@ -74,11 +74,16 @@ def gerar_listagem(caminho_dir, caminho_url):
 def servir_arquivo(conn, caminho):
     # Remove a / do início do caminho
     # ex: /index.html -> index.html
-    caminho_arquivo = caminho.lstrip('/')
-    
     # Se o caminho estiver vazio, serve index.html
-    if not caminho_arquivo:
-        caminho_arquivo = 'index.html'
+    caminho_arquivo = caminho.lstrip('/') or 'index.html'
+
+    # Resolve '..' e links simbólicos e recusa o que sair da pasta servida
+    # ex: /../../etc/passwd -> 403, em vez de entregar o arquivo
+    raiz = os.path.realpath(os.getcwd())
+    caminho_arquivo = os.path.realpath(caminho_arquivo)
+    if os.path.commonpath([raiz, caminho_arquivo]) != raiz:
+        erro_403(conn)
+        return 403
     
     if os.path.isdir(caminho_arquivo):
         index = os.path.join(caminho_arquivo, 'index.html')
