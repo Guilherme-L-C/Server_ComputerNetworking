@@ -40,6 +40,10 @@ def pagina_erro(conn, codigo, titulo, mensagem):
     }, html)
 
 # Funções específicas para cada erro
+def erro_403(conn):
+    pagina_erro(conn, 403, 'Forbidden',
+                'Você não tem permissão para acessar este caminho.')
+
 def erro_404(conn):
     pagina_erro(conn, 404, 'Not Found', 
                 'O arquivo ou diretório que você procura não existe.')
